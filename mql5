@@ -1,0 +1,82 @@
+mql5
+// Neuro Scalper EA MT5
+// Developer's site: forexroboteasy.com
+// Development by: Forex Robot Easy Team
+
+// Include necessary libraries and functions
+#include <Trade\Trade.mqh>
+#include <CustomIndicators\NeuroScalper.mqh>
+
+// Define constants
+#define SYMBOL 'XAUUSD'
+#define TIMEFRAME PERIOD_H1
+
+// Define variables
+int strategyIndex = 0;
+int positionTicket = 0;
+double lotSize = 0.01;
+double stopLoss = 100.0; // in pips
+double takeProfit = 200.0; // in pips
+
+// Create an instance of the NeuroScalper custom indicator
+CNeuroScalper neuroScalper;
+
+// Create an instance of the trade class
+CTrade trade;
+
+// Initialize the EA
+void OnInit()
+{
+   // Set the EA parameters
+   trade.SetExpertMagicNumber(123456);
+   
+   // Set the stop loss and take profit levels
+   trade.SetStopLoss(stopLoss);
+   trade.SetTakeProfit(takeProfit);
+   
+   // Set the lot size for each trade
+   trade.SetLots(lotSize);
+   
+   // Initialize the NeuroScalper indicator
+   neuroScalper.Init(SYMBOL, TIMEFRAME);
+}
+
+// Start trading
+void OnTick()
+{
+   // Check if a new bar has opened
+   if (neuroScalper.NewBar())
+   {
+      // Get the current strategy index
+      strategyIndex = neuroScalper.GetCurrentStrategyIndex();
+      
+      // Check if there is an open position
+      if (trade.PositionSelect(SYMBOL))
+      {
+         // Close the current position
+         trade.PositionClose(SYMBOL);
+      }
+      
+      // Execute a new trade based on the selected strategy
+      positionTicket = trade.PositionOpen(SYMBOL, trade.GetAction(strategyIndex));
+   }
+}
+
+// Handle trade events
+void OnTrade()
+{
+   // Check if the current position has been closed
+   if (trade.PositionGetTicket() == positionTicket && trade.PositionGetInteger(POSITION_TYPE) == POSITION_TYPE_HISTORY)
+   {
+      // Print the trade result
+      Print('Trade closed with profit/loss: ', trade.PositionGetDouble(POSITION_PROFIT));
+   }
+}
+
+// Handle script removal
+void OnDeinit(const int reason)
+{
+   // Cleanup resources
+   trade.Deinit();
+   neuroScalper.Deinit();
+}
